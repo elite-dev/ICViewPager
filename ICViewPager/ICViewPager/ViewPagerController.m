@@ -18,6 +18,7 @@
 #define kTabWidth 128.0
 #define kTabLocation 1.0
 #define kStartFromSecondTab 0.0
+#define kSlideTabs 0.0
 #define kCenterCurrentTab 0.0
 #define kFixFormerTabsPositions 0.0
 #define kFixLatterTabsPositions 0.0
@@ -82,20 +83,20 @@
     UIBezierPath *bezierPath;
     
     // Draw top line
-    bezierPath = [UIBezierPath bezierPath];
-    [bezierPath moveToPoint:CGPointMake(0.0, 0.0)];
-    [bezierPath addLineToPoint:CGPointMake(CGRectGetWidth(rect), 0.0)];
-    [[UIColor colorWithWhite:197.0/255.0 alpha:0.75] setStroke];
-    [bezierPath setLineWidth:1.0];
-    [bezierPath stroke];
-    
-    // Draw bottom line
-    bezierPath = [UIBezierPath bezierPath];
-    [bezierPath moveToPoint:CGPointMake(0.0, CGRectGetHeight(rect))];
-    [bezierPath addLineToPoint:CGPointMake(CGRectGetWidth(rect), CGRectGetHeight(rect))];
-    [[UIColor colorWithWhite:197.0/255.0 alpha:0.75] setStroke];
-    [bezierPath setLineWidth:1.0];
-    [bezierPath stroke];
+    //    bezierPath = [UIBezierPath bezierPath];
+    //    [bezierPath moveToPoint:CGPointMake(0.0, 0.0)];
+    //    [bezierPath addLineToPoint:CGPointMake(CGRectGetWidth(rect), 0.0)];
+    //    [[UIColor colorWithWhite:197.0/255.0 alpha:0.75] setStroke];
+    //    [bezierPath setLineWidth:1.0];
+    //    [bezierPath stroke];
+    //
+    //    // Draw bottom line
+    //    bezierPath = [UIBezierPath bezierPath];
+    //    [bezierPath moveToPoint:CGPointMake(0.0, CGRectGetHeight(rect))];
+    //    [bezierPath addLineToPoint:CGPointMake(CGRectGetWidth(rect), CGRectGetHeight(rect))];
+    //    [[UIColor colorWithWhite:197.0/255.0 alpha:0.75] setStroke];
+    //    [bezierPath setLineWidth:1.0];
+    //    [bezierPath stroke];
     
     // Draw an indicator line if tab is selected
     if (self.selected) {
@@ -132,6 +133,7 @@
 @property (nonatomic) NSNumber *tabWidth;
 @property (nonatomic) NSNumber *tabLocation;
 @property (nonatomic) NSNumber *startFromSecondTab;
+@property (nonatomic) NSNumber *slideTabs;
 @property (nonatomic) NSNumber *centerCurrentTab;
 @property (nonatomic) NSNumber *fixFormerTabsPositions;
 @property (nonatomic) NSNumber *fixLatterTabsPositions;
@@ -158,6 +160,7 @@
 @synthesize tabLocation = _tabLocation;
 @synthesize startFromSecondTab = _startFromSecondTab;
 @synthesize centerCurrentTab = _centerCurrentTab;
+@synthesize slideTabs = _slideTabs;
 @synthesize fixFormerTabsPositions = _fixFormerTabsPositions;
 @synthesize fixLatterTabsPositions = _fixLatterTabsPositions;
 
@@ -334,26 +337,28 @@
     UIView *tabView = [self tabViewAtIndex:self.activeTabIndex];
     CGRect frame = tabView.frame;
     
-    if ([self.centerCurrentTab boolValue]) {
-        
-        frame.origin.x += (CGRectGetWidth(frame) / 2);
-        frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
-        frame.size.width = CGRectGetWidth(self.tabsView.frame);
-        
-        if (frame.origin.x < 0) {
-            frame.origin.x = 0;
+    if ([self.slideTabs boolValue]) {
+        if ([self.centerCurrentTab boolValue]) {
+            
+            frame.origin.x += (CGRectGetWidth(frame) / 2);
+            frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
+            frame.size.width = CGRectGetWidth(self.tabsView.frame);
+            
+            if (frame.origin.x < 0) {
+                frame.origin.x = 0;
+            }
+            
+            if ((frame.origin.x + CGRectGetWidth(frame)) > self.tabsView.contentSize.width) {
+                frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
+            }
+        } else {
+            
+            frame.origin.x -= [self.tabOffset floatValue];
+            frame.size.width = CGRectGetWidth(self.tabsView.frame);
         }
         
-        if ((frame.origin.x + CGRectGetWidth(frame)) > self.tabsView.contentSize.width) {
-            frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
-        }
-    } else {
-        
-        frame.origin.x -= [self.tabOffset floatValue];
-        frame.size.width = CGRectGetWidth(self.tabsView.frame);
+        [self.tabsView scrollRectToVisible:frame animated:YES];
     }
-    
-    [self.tabsView scrollRectToVisible:frame animated:YES];
 }
 - (void)setActiveContentIndex:(NSUInteger)activeContentIndex {
     
@@ -561,6 +566,7 @@
     _tabWidth = nil;
     _tabLocation = nil;
     _startFromSecondTab = nil;
+    _slideTabs = nil;
     _centerCurrentTab = nil;
     _fixFormerTabsPositions = nil;
     _fixLatterTabsPositions = nil;
@@ -618,6 +624,7 @@
     // Update these options
     self.tabWidth = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionTabWidth withDefault:kTabWidth]];
     self.tabOffset = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionTabOffset withDefault:kTabOffset]];
+    self.slideTabs = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionSlideTabs withDefault:kSlideTabs]];
     self.centerCurrentTab = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionCenterCurrentTab withDefault:kCenterCurrentTab]];
     self.fixFormerTabsPositions = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionFixFormerTabsPositions withDefault:kFixFormerTabsPositions]];
     self.fixLatterTabsPositions = [NSNumber numberWithFloat:[self.delegate viewPager:self valueForOption:ViewPagerOptionFixLatterTabsPositions withDefault:kFixLatterTabsPositions]];
@@ -733,6 +740,8 @@
             return [[self tabLocation] floatValue];
         case ViewPagerOptionStartFromSecondTab:
             return [[self startFromSecondTab] floatValue];
+        case ViewPagerOptionSlideTabs:
+            return [[self slideTabs] floatValue];
         case ViewPagerOptionCenterCurrentTab:
             return [[self centerCurrentTab] floatValue];
         default:
@@ -761,7 +770,7 @@
                                                               navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
                                                                             options:nil];
     [self addChildViewController:self.pageViewController];
-
+    
     // Setup some forwarding events to hijack the scrollView
     // Keep a reference to the actual delegate
     self.actualDelegate = ((UIScrollView *)[self.pageViewController.view.subviews objectAtIndex:0]).delegate;
@@ -802,6 +811,10 @@
     // Add tabsView
     self.tabsView = (UIScrollView *)[self.view viewWithTag:kTabViewTag];
     
+    if (![self.slideTabs boolValue]) {
+        self.tabsView.scrollEnabled = false;
+    }
+    
     if (!self.tabsView) {
         
         self.tabsView = [[UIScrollView alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(self.view.frame), [self.tabHeight floatValue])];
@@ -822,7 +835,7 @@
     if ([self.fixFormerTabsPositions boolValue]) {
         
         // And if the centerCurrentTab is provided as YES fine tune the offset according to it
-        if ([self.centerCurrentTab boolValue]) {
+        if ([self.centerCurrentTab boolValue] && [self.slideTabs boolValue]) {
             contentSizeWidth = (CGRectGetWidth(self.tabsView.frame) - [self.tabWidth floatValue]) / 2.0;
         } else {
             contentSizeWidth = [self.tabOffset floatValue];
@@ -889,7 +902,7 @@
     }
     
     if ([[self.tabs objectAtIndex:index] isEqual:[NSNull null]]) {
-
+        
         // Get view from dataSource
         UIView *tabViewContent = [self.dataSource viewPager:self viewForTabAtIndex:index];
         tabViewContent.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
@@ -975,39 +988,41 @@
 #pragma mark - UIScrollViewDelegate, Responding to Scrolling and Dragging
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     
-    if ([self.actualDelegate respondsToSelector:@selector(scrollViewDidScroll:)]) {
-        [self.actualDelegate scrollViewDidScroll:scrollView];
-    }
-    
-    if (![self isAnimatingToTab]) {
-        UIView *tabView = [self tabViewAtIndex:self.activeTabIndex];
-        
-        // Get the related tab view position
-        CGRect frame = tabView.frame;
-        
-        CGFloat movedRatio = (scrollView.contentOffset.x / CGRectGetWidth(scrollView.frame)) - 1;
-        frame.origin.x += movedRatio * CGRectGetWidth(frame);
-        
-        if ([self.centerCurrentTab boolValue]) {
-            
-            frame.origin.x += (frame.size.width / 2);
-            frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
-            frame.size.width = CGRectGetWidth(self.tabsView.frame);
-            
-            if (frame.origin.x < 0) {
-                frame.origin.x = 0;
-            }
-            
-            if ((frame.origin.x + frame.size.width) > self.tabsView.contentSize.width) {
-                frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
-            }
-        } else {
-            
-            frame.origin.x -= [self.tabOffset floatValue];
-            frame.size.width = CGRectGetWidth(self.tabsView.frame);
+    if ([self.slideTabs boolValue]) {
+        if ([self.actualDelegate respondsToSelector:@selector(scrollViewDidScroll:)]) {
+            [self.actualDelegate scrollViewDidScroll:scrollView];
         }
         
-        [self.tabsView scrollRectToVisible:frame animated:NO];
+        if (![self isAnimatingToTab]) {
+            UIView *tabView = [self tabViewAtIndex:self.activeTabIndex];
+            
+            // Get the related tab view position
+            CGRect frame = tabView.frame;
+            
+            CGFloat movedRatio = (scrollView.contentOffset.x / CGRectGetWidth(scrollView.frame)) - 1;
+            frame.origin.x += movedRatio * CGRectGetWidth(frame);
+            
+            if ([self.centerCurrentTab boolValue]) {
+                
+                frame.origin.x += (frame.size.width / 2);
+                frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
+                frame.size.width = CGRectGetWidth(self.tabsView.frame);
+                
+                if (frame.origin.x < 0) {
+                    frame.origin.x = 0;
+                }
+                
+                if ((frame.origin.x + frame.size.width) > self.tabsView.contentSize.width) {
+                    frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
+                }
+            } else {
+                
+                frame.origin.x -= [self.tabOffset floatValue];
+                frame.size.width = CGRectGetWidth(self.tabsView.frame);
+            }
+            
+            [self.tabsView scrollRectToVisible:frame animated:NO];
+        }
     }
 }
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
@@ -1078,4 +1093,3 @@
 }
 
 @end
-
