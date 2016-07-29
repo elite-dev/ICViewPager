@@ -871,7 +871,11 @@
         }
     }
     
-    self.tabsView.contentSize = CGSizeMake(contentSizeWidth, [self.tabHeight floatValue]);
+    if (![self.slideTabs boolValue]) {
+        self.tabsView.contentSize = CGSizeMake([[UIScreen mainScreen] bounds].size.width, [self.tabHeight floatValue]);
+    } else {
+        self.tabsView.contentSize = CGSizeMake(contentSizeWidth, [self.tabHeight floatValue]);
+    }
     
     // Add contentView
     self.contentView = [self.view viewWithTag:kContentViewTag];
